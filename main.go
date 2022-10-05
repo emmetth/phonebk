@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -21,7 +22,8 @@ func NewModel() (*model, error) {
 }
 
 type model struct {
-	table table.Model
+	contacts []contacts.Contact
+	table    table.Model
 }
 
 func (m model) Init() tea.Cmd {
@@ -47,7 +49,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return baseStyle.Render(m.table.View()) + "\n"
+	return baseStyle.Render(m.table.View()) + "\n" + baseStyle.Render(m.Details()) + "\n"
+}
+
+func (m model) Details() string {
+	c := m.contacts[m.table.Cursor()]
+	return fmt.Sprintf("%s %s, %s %s\n\n%s\n", c.Address, c.City, c.State, c.Zipcode, c.Notes)
 }
 
 func main() {
@@ -88,7 +95,7 @@ func main() {
 		table.WithHeight(20),
 	)
 
-	m := model{t}
+	m := model{contacts, t}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		log.Fatalf("Alas, there's been an error: %v", err)
