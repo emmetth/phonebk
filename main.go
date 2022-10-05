@@ -3,21 +3,25 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/emmetth/phonebk/contacts"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+var baseStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("240"))
 
 func NewModel() (*model, error) {
 	return &model{}, nil
 }
 
 type model struct {
-	contacts []contacts.Contact
-	cursor   int
+	table table.Model
 }
 
 func (m model) Init() tea.Cmd {
@@ -26,59 +30,24 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
-
-	// Is it a key press?
 	case tea.KeyMsg:
-
-		// Cool, what was the actual key pressed?
 		switch msg.String() {
-
-		// These keys should exit the program.
-		case "ctrl+c", "q":
+		case "esc", "q", "ctrl+c":
 			return m, tea.Quit
-
-		// The "up" and "k" keys move the cursor up
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-
-		// The "down" and "j" keys move the cursor down
-		case "down", "j":
-			if m.cursor < len(m.contacts)-1 {
-				m.cursor++
-			}
-
+		case "enter":
+			return m, tea.Batch(
+				tea.Printf("Let's go to %s!", m.table.SelectedRow()[1]),
+			)
 		}
 	}
-
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
-	return m, nil
+	m.table, cmd = m.table.Update(msg)
+	return m, cmd
 }
 
 func (m model) View() string {
-	s := "" //user string builder
-
-	// Iterate over our choices
-	for i, contact := range m.contacts {
-
-		// Is the cursor pointing at this choice?
-		cursor := " " // no cursor
-		if m.cursor == i {
-			cursor = ">" // cursor!
-		}
-
-		// Render the row
-		s += fmt.Sprintf("%s %s\n", cursor, contact.Fname)
-	}
-
-	// The footer
-	s += "\nPress q to quit.\n"
-
-	// Send the UI for rendering
-	return s
+	return baseStyle.Render(m.table.View()) + "\n"
 }
 
 func main() {
@@ -99,7 +68,27 @@ func main() {
 		log.Fatal(err)
 	}
 
-	m := model{contacts: contacts}
+	columns := []table.Column{
+		{Title: "First", Width: 15},
+		{Title: "Last", Width: 15},
+		{Title: "Phone", Width: 15},
+		{Title: "Email", Width: 40},
+	}
+
+	var rows []table.Row
+
+	for _, contact := range contacts {
+		rows = append(rows, table.Row{contact.Fname, contact.Lname, contact.Phone, contact.Email})
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows(rows),
+		table.WithFocused(true),
+		table.WithHeight(20),
+	)
+
+	m := model{t}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		log.Fatalf("Alas, there's been an error: %v", err)
