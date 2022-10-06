@@ -15,15 +15,27 @@ import (
 
 var baseStyle = lipgloss.NewStyle()
 
-func NewModel() (*model, error) {
+/*
+func NewModel(contacts) (*model, error) {
 	return &model{}, nil
 }
+*/
 
 type model struct {
 	contacts []contacts.Contact
 	cursor   int
-	page     int
-	pageSize int
+	offset   int
+	height   int
+}
+
+func NewModel(contacts []contacts.Contact) model {
+	m := model{}
+	m.contacts = contacts
+	m.offset = 0
+	m.cursor = 0
+	m.height = 20
+
+	return m
 }
 
 func (m model) Init() tea.Cmd {
@@ -32,11 +44,13 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m *model) Home() {
+	m.offset = 0
 	m.cursor = 0
 }
 
 func (m *model) End() {
 	m.cursor = len(m.contacts) - 1
+	m.offset = m.cursor - m.height + 1
 }
 
 func (m *model) Up() {
@@ -44,12 +58,18 @@ func (m *model) Up() {
 	if m.cursor < 0 {
 		m.cursor = 0
 	}
+	if m.cursor < m.offset {
+		m.offset = m.cursor
+	}
 }
 
 func (m *model) Down() {
 	m.cursor = m.cursor + 1
 	if m.cursor > len(m.contacts)-1 {
 		m.cursor = len(m.contacts) - 1
+	}
+	if m.cursor-m.height >= m.offset {
+		m.offset = m.offset + 1
 	}
 }
 
@@ -75,7 +95,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	var sb strings.Builder
 
-	for i, c := range m.contacts {
+	for i := m.offset; i < m.offset+m.height; i++ {
+		if i > len(m.contacts) {
+			break
+		}
+		c := m.contacts[i]
 		sb.WriteString(baseStyle.Reverse(i == m.cursor).Render(fmt.Sprintf("%-15s | %-15s | %-15s | %s", c.Lname, c.Fname, c.Phone, c.Email)) + "\n")
 	}
 
@@ -105,7 +129,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	m := model{contacts, 0, 0, 0}
+	m := NewModel(contacts)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		log.Fatalf("Error: %v", err)
