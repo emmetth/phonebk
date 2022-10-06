@@ -73,6 +73,32 @@ func (m *model) Down() {
 	}
 }
 
+func (m *model) PageDown() {
+	m.offset = m.offset + m.height
+	m.cursor = m.cursor + m.height
+
+	if m.offset+m.height > len(m.contacts)-1 {
+		m.offset = len(m.contacts) - m.height
+	}
+
+	if m.cursor > len(m.contacts)-1 {
+		m.cursor = len(m.contacts) - 1
+	}
+}
+
+func (m *model) PageUp() {
+	m.offset = m.offset - m.height
+	m.cursor = m.cursor - m.height
+
+	if m.offset < 0 {
+		m.offset = 0
+	}
+
+	if m.cursor < 0 {
+		m.cursor = 0
+	}
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -87,6 +113,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Down()
 		case "up":
 			m.Up()
+		case "pgdown":
+			m.PageDown()
+		case "pgup":
+			m.PageUp()
 		}
 	}
 	return m, nil
@@ -96,7 +126,7 @@ func (m model) View() string {
 	var sb strings.Builder
 
 	for i := m.offset; i < m.offset+m.height; i++ {
-		if i > len(m.contacts) {
+		if i >= len(m.contacts) {
 			break
 		}
 		c := m.contacts[i]
