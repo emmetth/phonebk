@@ -52,6 +52,9 @@ func (m *model) Home() {
 func (m *model) End() {
 	m.cursor = len(m.contacts) - 1
 	m.offset = m.cursor - m.height + 1
+	if m.offset < 0 {
+		m.offset = 0
+	}
 }
 
 func (m *model) Up() {
@@ -80,6 +83,9 @@ func (m *model) PageDown() {
 
 	if m.offset+m.height > len(m.contacts)-1 {
 		m.offset = len(m.contacts) - m.height
+		if m.offset < 0 {
+			m.offset = 0
+		}
 	}
 
 	if m.cursor > len(m.contacts)-1 {
@@ -173,9 +179,13 @@ func (m model) ViewList() string {
 	}
 
 	// details
-	d := m.contacts[m.cursor]
-	sb.WriteString(strings.Repeat("=", 80))
-	sb.WriteString(fmt.Sprintf("\n%s %s, %s %s\n\n%s\n", d.Address, d.City, d.State, d.Zipcode, d.Notes))
+	if len(m.contacts) > 0 {
+		d := m.contacts[m.cursor]
+		sb.WriteString(strings.Repeat("=", 80))
+		sb.WriteString(fmt.Sprintf("\n%s %s, %s %s\n\n%s\n", d.Address, d.City, d.State, d.Zipcode, d.Notes))
+	} else {
+		sb.WriteString("No contacts")
+	}
 
 	return sb.String()
 }
