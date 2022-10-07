@@ -14,18 +14,19 @@ import (
 )
 
 var baseStyle = lipgloss.NewStyle()
+var db *contacts.Queries
 
-/*
-func NewModel(contacts) (*model, error) {
-	return &model{}, nil
-}
-*/
+const (
+	StatusList = iota
+	StatusConfirm
+)
 
 type model struct {
 	contacts []contacts.Contact
 	cursor   int
 	offset   int
 	height   int
+	status   int
 }
 
 func NewModel(contacts []contacts.Contact) model {
@@ -34,7 +35,7 @@ func NewModel(contacts []contacts.Contact) model {
 	m.offset = 0
 	m.cursor = 0
 	m.height = 20
-
+	m.status = StatusList
 	return m
 }
 
@@ -99,7 +100,11 @@ func (m *model) PageUp() {
 	}
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) Delete() {
+	m.status = StatusConfirm
+}
+
+func (m model) UpdateList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -117,12 +122,46 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.PageDown()
 		case "pgup":
 			m.PageUp()
+		case "delete":
+			m.Delete()
 		}
 	}
 	return m, nil
 }
 
-func (m model) View() string {
+func (m model) UpdateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var err error
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc", "N", "n":
+			m.status = StatusList
+		case "Y", "y":
+			m.status = StatusList
+			db.Delete(context.Background(), m.contacts[m.cursor].ID)
+			m.contacts, err = db.List(context.Background())
+			if err != nil {
+				log.Fatal(err)
+			}
+			if m.cursor > len(m.contacts)-1 {
+				m.cursor = len(m.contacts) - 1
+			}
+		}
+	}
+	return m, nil
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch m.status {
+	case StatusList:
+		return m.UpdateList(msg)
+	case StatusConfirm:
+		return m.UpdateConfirm(msg)
+	}
+	return m, nil
+}
+
+func (m model) ViewList() string {
 	var sb strings.Builder
 
 	for i := m.offset; i < m.offset+m.height; i++ {
@@ -141,6 +180,42 @@ func (m model) View() string {
 	return sb.String()
 }
 
+func (m model) ViewConfirm() string {
+	c := m.contacts[m.cursor]
+	style := lipgloss.NewStyle().
+		Reverse(true).
+		Border(lipgloss.RoundedBorder()).
+		MarginLeft(3).
+		Padding(0, 1).
+		BorderTop(true).
+		BorderLeft(true).
+		BorderRight(true).
+		BorderBottom(true)
+
+	v := m.ViewList()
+	vLines := strings.Split(v, "\n")
+
+	d := style.Render(fmt.Sprintf("Delete %s %s (Y/N)", c.Fname, c.Lname))
+	dLines := strings.Split(d, "\n")
+
+	for i, line := range dLines {
+		vLines[i] = line
+	}
+
+	return strings.Join(vLines, "\n")
+}
+
+func (m model) View() string {
+	var view string
+	switch m.status {
+	case StatusList:
+		view = m.ViewList()
+	case StatusConfirm:
+		view = m.ViewConfirm()
+	}
+	return view
+}
+
 func main() {
 	conn, err := sql.Open("sqlite3", "phonebk.db")
 	if err != nil {
@@ -152,7 +227,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db := contacts.New(conn)
+	db = contacts.New(conn)
 
 	contacts, err := db.List(context.Background())
 	if err != nil {
