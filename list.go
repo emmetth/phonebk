@@ -97,7 +97,7 @@ func (m *ListModel) PageUp() {
 	}
 }
 
-func (m ListModel) ListUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m ListModel) UpdateList(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -118,7 +118,6 @@ func (m ListModel) ListUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "delete":
 			m.confirm = true
 		case "enter":
-			log.Println("enter pressed")
 			return m, EditCmd(m.contacts[m.cursor])
 		}
 	}
@@ -148,38 +147,10 @@ func (m ListModel) UpdateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	if m.confirm {
 		return m.UpdateConfirm(msg)
 	}
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc", "q", "ctrl+c":
-			return m, tea.Quit
-		case "home", "alt+[H":
-			m.Home()
-		case "end", "alt+[F":
-			m.End()
-		case "down":
-			m.Down()
-		case "up":
-			m.Up()
-		case "pgdown":
-			m.PageDown()
-		case "pgup":
-			m.PageUp()
-		case "delete":
-			m.confirm = true
-		case "enter":
-			log.Println("enter pressed")
-			return m, EditCmd(m.contacts[m.cursor])
-		}
-	}
-
-	log.Println("return nothing")
-	return m, nil
+	return m.UpdateList(msg)
 }
 
 func (m ListModel) ViewList() string {

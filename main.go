@@ -37,8 +37,10 @@ func EditCmd(contact contacts.Contact) tea.Cmd {
 	}
 }
 
-func BackCmd() tea.Msg {
-	return BackMsg{}
+func BackCmd() tea.Cmd {
+	return func() tea.Msg {
+		return BackMsg{}
+	}
 }
 
 func NewMainModel(contacts []contacts.Contact) MainModel {
@@ -53,20 +55,23 @@ func (m MainModel) Init() tea.Cmd {
 }
 
 func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	log.Printf("main msg: %+v\n", msg)
 	switch msg.(type) {
 	case EditMsg:
 		m.state = StateEdit
-		log.Println(msg)
+		m.edit = NewEditModel(msg.(EditMsg).contact)
 	case BackMsg:
 		m.state = StateList
 	}
 
 	switch m.state {
 	case StateList:
-		return m.list.Update(msg)
+		newList, newCmd := m.list.Update(msg)
+		m.list = newList.(ListModel)
+		return m, newCmd
 	case StateEdit:
-		return m.edit.Update(msg)
+		newEdit, newCmd := m.edit.Update(msg)
+		m.edit = newEdit.(EditModel)
+		return m, newCmd
 	}
 
 	return m, nil

@@ -16,6 +16,10 @@ func (m EditModel) Init() tea.Cmd {
 	return nil
 }
 
+func NewEditModel(contact contacts.Contact) EditModel {
+	return EditModel{contact}
+}
+
 func (m EditModel) View() string {
 	var sb strings.Builder
 	sb.WriteString("edit screen")
@@ -29,7 +33,7 @@ func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc":
 			// send back cmd
-			return m, tea.Quit
+			return m, BackCmd()
 		}
 	}
 	return m, nil
