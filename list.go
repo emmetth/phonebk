@@ -119,6 +119,8 @@ func (m ListModel) UpdateList(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.confirm = true
 		case "enter":
 			return m, EditCmd(m.contacts[m.cursor])
+		case "insert", "alt+[2~":
+			return m, EditCmd(contacts.Contact{})
 		}
 	}
 	return m, nil

@@ -39,20 +39,19 @@ func EditCmd(contact contacts.Contact) tea.Cmd {
 	}
 }
 
-func BackCmd(contact contacts.Contact) tea.Cmd {
+func BackCmd() tea.Cmd {
 	return func() tea.Msg {
-		return BackMsg{contact}
+		return BackMsg{}
 	}
 }
 
-func NewMainModel(contacts []contacts.Contact) MainModel {
+func NewMainModel() MainModel {
 	m := MainModel{}
-	m.list = NewListModel(contacts)
+	m.Load()
 	return m
 }
 
 func (m MainModel) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
 	return nil
 }
 
@@ -63,7 +62,7 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.edit = NewEditModel(msg.(EditMsg).contact)
 	case BackMsg:
 		m.state = StateList
-		m.list.contacts[m.list.cursor] = msg.(BackMsg).contact
+		m.Load()
 	}
 
 	switch m.state {
@@ -91,6 +90,15 @@ func (m MainModel) View() string {
 	return view
 }
 
+func (m *MainModel) Load() {
+	contacts, err := db.List(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	m.list = NewListModel(contacts)
+}
+
 func main() {
 	conn, err := sql.Open("sqlite3", "phonebk.db")
 	if err != nil {
@@ -104,12 +112,7 @@ func main() {
 
 	db = contacts.New(conn)
 
-	contacts, err := db.List(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	m := NewMainModel(contacts)
+	m := NewMainModel()
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		log.Fatalf("Error: %v", err)

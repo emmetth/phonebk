@@ -103,7 +103,6 @@ func (m EditModel) contact() contacts.Contact {
 func (m EditModel) View() string {
 	var sb strings.Builder
 
-	sb.WriteString("Edit Screen\n")
 	for _, input := range m.inputs {
 		sb.WriteString(input.View() + "\n")
 	}
@@ -160,14 +159,22 @@ func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
-			// send back cmd
 			c := m.contact()
-			params := contacts.UpdateParams{ID: c.ID, Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
-			err := db.Update(context.Background(), params)
-			if err != nil {
-				log.Panic(err)
+			if c.ID == 0 {
+				params := contacts.AddParams{Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
+				err := db.Add(context.Background(), params)
+				if err != nil {
+					log.Panic(err)
+				}
+
+			} else {
+				params := contacts.UpdateParams{ID: c.ID, Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
+				err := db.Update(context.Background(), params)
+				if err != nil {
+					log.Panic(err)
+				}
 			}
-			return m, BackCmd(c)
+			return m, BackCmd()
 		case "up", "shift+tab":
 			m.up()
 		case "enter", "down", "tab":
