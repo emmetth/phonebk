@@ -126,12 +126,14 @@ func (m ListModel) UpdateList(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Type == tea.KeyRunes {
 			key := strings.ToLower(msg.String())
 			if len(key) == 1 && key >= "a" && key <= "z" {
+				newCursor := len(m.contacts) - 1
 				for i, contact := range m.contacts {
 					if strings.Compare(key, strings.ToLower(contact.Lname)) <= 0 {
-						m.cursor = i
+						newCursor = i
 						break
 					}
 				}
+				m.cursor = newCursor
 			}
 		}
 	}
