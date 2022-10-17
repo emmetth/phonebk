@@ -23,7 +23,9 @@ type EditMsg struct {
 	contact contacts.Contact
 }
 
-type BackMsg struct{}
+type BackMsg struct {
+	contact contacts.Contact
+}
 
 type MainModel struct {
 	state int
@@ -37,9 +39,9 @@ func EditCmd(contact contacts.Contact) tea.Cmd {
 	}
 }
 
-func BackCmd() tea.Cmd {
+func BackCmd(contact contacts.Contact) tea.Cmd {
 	return func() tea.Msg {
-		return BackMsg{}
+		return BackMsg{contact}
 	}
 }
 
@@ -61,6 +63,7 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.edit = NewEditModel(msg.(EditMsg).contact)
 	case BackMsg:
 		m.state = StateList
+		m.list.contacts[m.list.cursor] = msg.(BackMsg).contact
 	}
 
 	switch m.state {

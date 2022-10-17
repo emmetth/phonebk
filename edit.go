@@ -5,7 +5,17 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/emmetth/phonebk/contacts"
+)
+
+var (
+	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle         = focusedStyle.Copy()
+	noStyle             = lipgloss.NewStyle()
+	helpStyle           = blurredStyle.Copy()
+	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 )
 
 type EditModel struct {
@@ -25,6 +35,7 @@ func NewEditModel(contact contacts.Contact) EditModel {
 
 	for i := range m.inputs {
 		t := textinput.New()
+		t.CursorStyle = cursorStyle
 		t.CharLimit = 40
 		t.Width = 40
 
@@ -33,6 +44,9 @@ func NewEditModel(contact contacts.Contact) EditModel {
 			t.Placeholder = "First Name"
 			t.Focus()
 			t.SetValue(contact.Fname)
+			t.Focus()
+			t.PromptStyle = focusedStyle
+			t.TextStyle = focusedStyle
 		case 1:
 			t.Placeholder = "Last Name"
 			t.SetValue(contact.Lname)
@@ -61,19 +75,79 @@ func NewEditModel(contact contacts.Contact) EditModel {
 			t.Placeholder = "Notes"
 			t.SetValue(contact.Notes)
 		}
+		m.inputs[i] = t
 	}
 
 	return m
 }
 
+func (m EditModel) contact() contacts.Contact {
+	return contacts.Contact{
+		Fname:    m.inputs[0].Value(),
+		Lname:    m.inputs[1].Value(),
+		Phone:    m.inputs[2].Value(),
+		Email:    m.inputs[3].Value(),
+		Address:  m.inputs[4].Value(),
+		City:     m.inputs[5].Value(),
+		State:    m.inputs[6].Value(),
+		Zipcode:  m.inputs[7].Value(),
+		Birthday: m.inputs[8].Value(),
+		Notes:    m.inputs[9].Value()}
+}
+
 func (m EditModel) View() string {
 	var sb strings.Builder
 
-	for i := range m.inputs {
-		sb.WriteString(m.inputs[i].View() + "\n")
+	sb.WriteString("Edit Screen\n")
+	for _, input := range m.inputs {
+		sb.WriteString(input.View() + "\n")
 	}
 
 	return sb.String()
+}
+
+func (m *EditModel) updateInputs(msg tea.Msg) tea.Cmd {
+	cmds := make([]tea.Cmd, len(m.inputs))
+
+	// Only text inputs with Focus() set will respond, so it's safe to simply
+	// update all of them here without any further logic.
+	for i := range m.inputs {
+		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+	}
+
+	return tea.Batch(cmds...)
+}
+
+func (m *EditModel) setFocus() {
+	for i := 0; i <= len(m.inputs)-1; i++ {
+		if i == m.focus {
+			// Set focused state
+			m.inputs[i].Focus()
+			m.inputs[i].PromptStyle = focusedStyle
+			m.inputs[i].TextStyle = focusedStyle
+			continue
+		}
+		// Remove focused state
+		m.inputs[i].Blur()
+		m.inputs[i].PromptStyle = noStyle
+		m.inputs[i].TextStyle = noStyle
+	}
+}
+
+func (m *EditModel) down() {
+	m.focus++
+	if m.focus >= len(m.inputs) {
+		m.focus = len(m.inputs) - 1
+	}
+	m.setFocus()
+}
+
+func (m *EditModel) up() {
+	m.focus--
+	if m.focus < 0 {
+		m.focus = 0
+	}
+	m.setFocus()
 }
 
 func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -82,9 +156,15 @@ func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc":
 			// send back cmd
-			return m, BackCmd()
+			return m, BackCmd(m.contact())
+		case "up", "shift+tab":
+			m.up()
+		case "enter", "down", "tab":
+			m.down()
 		}
 	}
 
-	return m, nil
+	cmd := m.updateInputs(msg)
+
+	return m, cmd
 }
