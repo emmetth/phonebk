@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"log"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -19,8 +21,9 @@ var (
 )
 
 type EditModel struct {
-	focus  int
-	inputs []textinput.Model
+	focus     int
+	contactId int64
+	inputs    []textinput.Model
 }
 
 func (m EditModel) Init() tea.Cmd {
@@ -31,6 +34,7 @@ func (m EditModel) Init() tea.Cmd {
 func NewEditModel(contact contacts.Contact) EditModel {
 	m := EditModel{}
 	m.focus = 0
+	m.contactId = contact.ID
 	m.inputs = make([]textinput.Model, 10)
 
 	for i := range m.inputs {
@@ -92,7 +96,8 @@ func (m EditModel) contact() contacts.Contact {
 		State:    m.inputs[6].Value(),
 		Zipcode:  m.inputs[7].Value(),
 		Birthday: m.inputs[8].Value(),
-		Notes:    m.inputs[9].Value()}
+		Notes:    m.inputs[9].Value(),
+		ID:       m.contactId}
 }
 
 func (m EditModel) View() string {
@@ -156,7 +161,13 @@ func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc":
 			// send back cmd
-			return m, BackCmd(m.contact())
+			c := m.contact()
+			params := contacts.UpdateParams{ID: c.ID, Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
+			err := db.Update(context.Background(), params)
+			if err != nil {
+				log.Panic(err)
+			}
+			return m, BackCmd(c)
 		case "up", "shift+tab":
 			m.up()
 		case "enter", "down", "tab":
