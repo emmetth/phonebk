@@ -122,6 +122,18 @@ func (m ListModel) UpdateList(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "insert", "alt+[2~":
 			return m, EditCmd(contacts.Contact{})
 		}
+
+		if msg.Type == tea.KeyRunes {
+			key := strings.ToLower(msg.String())
+			if len(key) == 1 && key >= "a" && key <= "z" {
+				for i, contact := range m.contacts {
+					if strings.Compare(key, strings.ToLower(contact.Lname)) <= 0 {
+						m.cursor = i
+						break
+					}
+				}
+			}
+		}
 	}
 	return m, nil
 }
