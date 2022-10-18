@@ -182,7 +182,7 @@ func (m ListModel) ViewList() string {
 			break
 		}
 		c := m.contacts[i]
-		sb.WriteString(baseStyle.Reverse(i == m.cursor).Render(fmt.Sprintf("%-15s | %-15s | %-12s | %s", c.Fname, c.Lname, c.Phone, c.Email)) + "\n")
+		sb.WriteString(baseStyle.Reverse(i == m.cursor).Render(fmt.Sprintf("%-25s | %-12s | %s", c.Fname+" "+c.Lname, c.Phone, c.Email)) + "\n")
 	}
 
 	// details
