@@ -163,6 +163,11 @@ func (m ListModel) UpdateConfirm(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.height = msg.Height - 5
+		return m, nil
+	}
 	if m.confirm {
 		return m.UpdateConfirm(msg)
 	}
