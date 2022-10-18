@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"os"
+	"path/filepath"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -100,7 +102,12 @@ func (m *MainModel) Load() {
 }
 
 func main() {
-	conn, err := sql.Open("sqlite3", "phonebk.db")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	conn, err := sql.Open("sqlite3", filepath.Join(home, ".phonebk", "phonebk.db"))
 	if err != nil {
 		log.Fatal(err)
 	}
