@@ -128,7 +128,7 @@ func (m ListModel) UpdateList(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(key) == 1 && key >= "a" && key <= "z" {
 				newCursor := len(m.contacts) - 1
 				for i, contact := range m.contacts {
-					if strings.Compare(key, strings.ToLower(contact.Lname)) <= 0 {
+					if strings.Compare(key, strings.ToLower(contact.Fname)) <= 0 {
 						newCursor = i
 						break
 					}
@@ -177,7 +177,7 @@ func (m ListModel) ViewList() string {
 			break
 		}
 		c := m.contacts[i]
-		sb.WriteString(baseStyle.Reverse(i == m.cursor).Render(fmt.Sprintf("%-15s | %-15s | %-15s | %s", c.Lname, c.Fname, c.Phone, c.Email)) + "\n")
+		sb.WriteString(baseStyle.Reverse(i == m.cursor).Render(fmt.Sprintf("%-15s | %-15s | %-12s | %s", c.Fname, c.Lname, c.Phone, c.Email)) + "\n")
 	}
 
 	// details

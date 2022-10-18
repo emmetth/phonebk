@@ -53,7 +53,7 @@ func (q *Queries) Delete(ctx context.Context, id int64) error {
 }
 
 const list = `-- name: List :many
-SELECT id, fname, lname, phone, email, birthday, address, city, state, zipcode, notes FROM contacts ORDER BY lname
+SELECT id, fname, lname, phone, email, birthday, address, city, state, zipcode, notes FROM contacts ORDER BY fname
 `
 
 func (q *Queries) List(ctx context.Context) ([]Contact, error) {

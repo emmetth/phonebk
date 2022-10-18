@@ -1,5 +1,5 @@
 -- name: List :many
-SELECT * FROM contacts ORDER BY lname;
+SELECT * FROM contacts ORDER BY fname;
 
 -- name: Add :exec
 insert into contacts (fname, lname, phone, email, birthday, address, city, state, zipcode, notes) values
