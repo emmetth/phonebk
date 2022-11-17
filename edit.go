@@ -161,14 +161,14 @@ func (m EditModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			c := m.contact()
 			if c.ID == 0 {
-				params := contacts.AddParams{Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
+				params := contacts.AddParams{Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, City: c.City, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
 				err := db.Add(context.Background(), params)
 				if err != nil {
 					log.Panic(err)
 				}
 
 			} else {
-				params := contacts.UpdateParams{ID: c.ID, Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
+				params := contacts.UpdateParams{ID: c.ID, Fname: c.Fname, Lname: c.Lname, Phone: c.Phone, Email: c.Email, Address: c.Address, City: c.City, State: c.State, Zipcode: c.Zipcode, Birthday: c.Birthday, Notes: c.Notes}
 				err := db.Update(context.Background(), params)
 				if err != nil {
 					log.Panic(err)
